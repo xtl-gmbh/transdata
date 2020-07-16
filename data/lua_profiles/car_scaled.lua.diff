@@ -1,0 +1,67 @@
+--- osrm-learning/data/lua_profiles/car.lua	2018-06-11 17:05:33.646365396 +0200
++++ osrm-learning/data/lua_profiles/car_scaled.lua	2018-09-24 10:46:37.601668732 +0200
+@@ -10,6 +10,42 @@
+ local Directional = require('lib/directional')
+ 
+ -- Begin of globals
++
++-- Learned by TensorFlow neural network
++learned_scaling_factors = {}
++local filename = '/data/scaling_factors.csv'
++local file = io.open(filename)
++while true do
++  local way_id = file:read('*number')
++  file:read(1)  -- skip separator
++  local scaling_factor = file:read('*number')
++  if not way_id or not scaling_factor then
++    file:close()
++    break
++  end
++  learned_scaling_factors[way_id] = scaling_factor
++end
++--noinspection LuaUnreachableStatement
++print('learned_scaling_factors', learned_scaling_factors)
++
++-- A way is only scaled if its highway tag value appears
++-- in the file and is not preceeded by a '#' character
++highway_tags_whitelist = {}
++local filename = '/data/highway_tags_whitelist.txt'
++local file = io.open(filename)
++while true do
++  local tag = file:read('*line')
++  if not tag then
++    file:close()
++    break
++  end
++  if tag:sub(1, 1) ~= '#' then
++    highway_tags_whitelist[tag] = true
++  end
++end
++--noinspection LuaUnreachableStatement
++print('highway_tags_whitelist', highway_tags_whitelist)
++
+ barrier_whitelist = Set {
+   'cattle_grid',
+   'border_control',
+@@ -451,6 +487,21 @@
+   if handle_maxspeed(way,data,result) == false then return false end
+   if handle_speed_scaling(way,result) == false then return false end
+   if handle_alternating_speed(way,result) == false then return false end
++  if not highway_tags_whitelist[data.highway] then return true end
++  if handle_learned_speed_scaling(way,result) == false then return false end
++end
++
++-- scale speed by factor learned by TensorFlow neural network
++function handle_learned_speed_scaling(way,result)
++  local way_id = way:id()
++  local scaling_factor = learned_scaling_factors[way:id()]
++  if scaling_factor ~= nil then
++--    print(string.format('\n# way %s %s\n', way_id, scaling_factor))
++    result.forward_speed = result.forward_speed * scaling_factor
++    result.backward_speed = result.backward_speed * scaling_factor
++--  else
++--    print(string.format('\n# way %s nil\n', way_id))
++  end
+ end
+ 
+ -- reduce speed on special side roads

@@ -1,0 +1,11 @@
+motorway
+trunk
+primary
+secondary
+#tertiary
+#unclassified
+#residential
+#service
+#track
+#road
+#living_street
