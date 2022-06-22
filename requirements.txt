@@ -1,6 +1,6 @@
 flask==1.0.2
 #gunicorn==19.8.1
-numpy==1.14.1
+numpy==1.22.0
 matplotlib==2.2.2
 postgres==2.2.1
 progress==1.4.0
